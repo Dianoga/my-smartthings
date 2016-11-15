@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+	{{> head.html}}
+</head>
+<body>
+	<main>
+        <div id="square">
+            <div id="button">
+
+            </div>
+        </div>
+    </main>
+    {{#st.resources}}
+        <!-- external sources should be included from cdn-smartthings-->
+        <script src="https://cdn-developers.smartthings.com/libs/jquery/2.2.0/jquery.min.js"></script>
+
+        <!-- SmartThings provided javascript should be included -->
+        <script src="(smartthings/st.js)"></script>
+
+        <!-- Include our app-specific javascript. Use version query
+             string to bust any caching by the mobile client -->
+        <script src="(javascript/app.js?v=1)"></script>
+    {{/st.resources}}
+</body>
+</html>
