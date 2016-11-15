@@ -58,7 +58,7 @@ def mainPage() {
 			for (def i = 1; i <= zoneCount; i++) {
 				if (settings["enabled${i}"]) {
 					enabledZones++;
-					href "zonePage${i}", title: "Zone ${i}";
+					href "zonePage${i}", title: settings["name${i}"];
 				} else {
 					availableZones.push(i)
 				}
@@ -75,7 +75,7 @@ def mainPage() {
 def getZonePage(zoneNum) {
 	dynamicPage(name: "zonePage${zoneNum}") {
 		section {
-			input "enabled${zoneNum}", "bool", title: "Zone Enabled", defaultValue: true, submitOnChange: true
+			input "enabled${zoneNum}", "bool", title: "Zone Enabled", submitOnChange: true
 		}
 
 		if (settings["enabled${zoneNum}"]) {
@@ -89,7 +89,7 @@ def getZonePage(zoneNum) {
 			section("Advanced Settings") {
 				input "offAfterMotion${zoneNum}", "bool", title: "Turn off when motion stops", submitOnChange: true
 				if (settings["offAfterMotion${zoneNum}"]) {
-					input "offDelay${zoneNum}", "number", title: "How long", hint: "Minutes", defaultValue: 0, required: true
+					input "offDelay${zoneNum}", "number", title: "How long", hint: "Minutes", required: true
 				}
 
 				input "physicalOverride${zoneNum}", "bool", title: "Physical Override", hint: "Leave on when physically turned on", defaultValue: false
@@ -156,7 +156,7 @@ def motionHandler(evt) {
 				return
 			}
 
-			runIn(5 * settings["offDelay${zone}"], switchOff, [overwrite: false, data: [zone: zone]])
+			runIn(60 * settings["offDelay${zone}"], switchOff, [overwrite: false, data: [zone: zone]])
 			// runIn(5 * settings["offDelay${zone}"] + 30, switchOff, [overwrite: false, data: [zone: zone, doubleCheck: true]])
 		}
 	}
@@ -212,7 +212,7 @@ def shouldSwitchTurnOff(device) {
 		}
 
 		// Check against delay
-		def offDelaySeconds = settings["offDelay${zone}"] * 5
+		def offDelaySeconds = settings["offDelay${zone}"] * 60
 		if (nowSeconds < zoneState.inactive + offDelaySeconds - 5) {
 			log.trace "Delay ${device.displayName}, $nowSeconds, ${zoneState.inactive + offDelaySeconds}"
 			return false
