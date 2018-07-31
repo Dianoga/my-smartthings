@@ -293,6 +293,7 @@ private estimateLux(solarradiation, sunriseDate, sunsetDate, weatherIcon) {
 
 	if (solarradiation != '--') {
 		lux = solarradiation.toDouble() / 0.0079
+    	log.debug "Calculate solar radiation: ${solarradiation} / 0.0079 = ${lux}"
 	} else {
 		def now = new Date().time
 		if (now > sunriseDate.time && now < sunsetDate.time) {
