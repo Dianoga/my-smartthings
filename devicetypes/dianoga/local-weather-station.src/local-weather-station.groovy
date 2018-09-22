@@ -12,17 +12,27 @@ metadata {
 		capability "Illuminance Measurement"
 		capability "Temperature Measurement"
 		capability "Relative Humidity Measurement"
-        capability "Polling"
+		capability "Polling"
+
+		attribute "wind", "number"
+		attribute "windGust", "number"
+		attribute "dewPoint", "number"
+		attribute "feelsLike", "number"
+		attribute "windDirection", "number"
+		attribute "rainInches", "number"
+		attribute "rainDailyInches", "number"
+		attribute "rainWeeklyInches", "number"
+		attribute "rainMonthlyInches", "number"
+		attribute "rainYearlyInches", "number"
+		attribute "pressureInches", "number"
 
 		attribute "localSunrise", "string"
 		attribute "localSunset", "string"
 		attribute "city", "string"
 		attribute "timeZoneOffset", "string"
 		attribute "weather", "string"
-		attribute "wind", "string"
 		attribute "weatherIcon", "string"
 		attribute "forecastIcon", "string"
-		attribute "feelsLike", "string"
 		attribute "percentPrecip", "string"
 		attribute "alert", "string"
 		attribute "alertKeys", "string"
@@ -33,7 +43,7 @@ metadata {
 	}
 
 	preferences {
-		input "zipCode", "text", title: "Zip Code (optional)", required: false
+		input "zipCode", "text", title: "Zip Code (optional)", description: "Used for alerts", required: false
 	}
 
 	tiles {
@@ -156,19 +166,8 @@ def poll() {
 	def obs = get("conditions")?.current_observation
 	if (obs) {
 		def weatherIcon = obs.icon_url.split("/")[-1].split("\\.")[0]
-
-		if(getTemperatureScale() == "C") {
-			send(name: "temperature", value: Math.round(obs.temp_c), unit: "C")
-			send(name: "feelsLike", value: Math.round(obs.feelslike_c as Double), unit: "C")
-		} else {
-			send(name: "temperature", value: Math.round(obs.temp_f), unit: "F")
-			send(name: "feelsLike", value: Math.round(obs.feelslike_f as Double), unit: "F")
-		}
-		
-		send(name: "humidity", value: obs.relative_humidity[0..-2] as Integer, unit: "%")
 		send(name: "weather", value: obs.weather)
 		send(name: "weatherIcon", value: weatherIcon, displayed: false)
-		send(name: "wind", value: Math.round(obs.wind_mph) as String, unit: "MPH") // as String because of bug in determining state change of 0 numbers
 
 		if (obs.local_tz_offset != device.currentValue("timeZoneOffset")) {
 			send(name: "timeZoneOffset", value: obs.local_tz_offset, isStateChange: true)
@@ -190,63 +189,60 @@ def poll() {
 		def sunriseDate = ltf.parse("${today} ${a.sunrise.hour}:${a.sunrise.minute}")
 		def sunsetDate = ltf.parse("${today} ${a.sunset.hour}:${a.sunset.minute}")
 
-        def tf = new java.text.SimpleDateFormat("h:mm a")
-        tf.setTimeZone(TimeZone.getTimeZone("GMT${obs.local_tz_offset}"))
-        def localSunrise = "${tf.format(sunriseDate)}"
-        def localSunset = "${tf.format(sunsetDate)}"
-        send(name: "localSunrise", value: localSunrise, descriptionText: "Sunrise today is at $localSunrise")
-        send(name: "localSunset", value: localSunset, descriptionText: "Sunset today at is $localSunset")
+		def tf = new java.text.SimpleDateFormat("h:mm a")
+		tf.setTimeZone(TimeZone.getTimeZone("GMT${obs.local_tz_offset}"))
+		def localSunrise = "${tf.format(sunriseDate)}"
+		def localSunset = "${tf.format(sunsetDate)}"
+		send(name: "localSunrise", value: localSunrise, descriptionText: "Sunrise today is at $localSunrise")
+		send(name: "localSunset", value: localSunset, descriptionText: "Sunset today at is $localSunset")
+	} else {
+		log.warn "Current conditions not found"
+	}
 
-		send(name: "illuminance", value: estimateLux(obs.solarradiation, sunriseDate, sunsetDate, weatherIcon) as Integer)
-
-		// Forecast
-		def f = get("forecast")
-		def f1= f?.forecast?.simpleforecast?.forecastday
-		if (f1) {
-			def icon = f1[0].icon_url.split("/")[-1].split("\\.")[0]
-			def value = f1[0].pop as String // as String because of bug in determining state change of 0 numbers
-			send(name: "percentPrecip", value: value, unit: "%")
-			send(name: "forecastIcon", value: icon, displayed: false)
-		}
-		else {
-			log.warn "Forecast not found"
-		}
-
-		// Alerts
-		def alerts = get("alerts")?.alerts
-		def newKeys = alerts?.collect{it.type + it.date_epoch} ?: []
-		log.debug "WUSTATION: newKeys: $newKeys"
-		log.trace device.currentState("alertKeys")
-		def oldKeys = device.currentState("alertKeys")?.jsonValue
-		log.debug "WUSTATION: oldKeys: $oldKeys"
-
-		def noneString = "no current weather alerts"
-		if (!newKeys && oldKeys == null) {
-			send(name: "alertKeys", value: newKeys.encodeAsJSON(), displayed: false)
-			send(name: "alert", value: noneString, descriptionText: "${device.displayName} has no current weather alerts", isStateChange: true)
-		}
-		else if (newKeys != oldKeys) {
-			if (oldKeys == null) {
-				oldKeys = []
-			}
-			send(name: "alertKeys", value: newKeys.encodeAsJSON(), displayed: false)
-
-			def newAlerts = false
-			alerts.each {alert ->
-				if (!oldKeys.contains(alert.type + alert.date_epoch)) {
-					def msg = "${alert.description} from ${alert.date} until ${alert.expires}"
-					send(name: "alert", value: pad(alert.description), descriptionText: msg, isStateChange: true)
-					newAlerts = true
-				}
-			}
-
-			if (!newAlerts && device.currentValue("alert") != noneString) {
-				send(name: "alert", value: noneString, descriptionText: "${device.displayName} has no current weather alerts", isStateChange: true)
-			}
-		}
+	// Forecast
+	def f = get("forecast")
+	def f1= f?.forecast?.simpleforecast?.forecastday
+	if (f1) {
+		def icon = f1[0].icon_url.split("/")[-1].split("\\.")[0]
+		def value = f1[0].pop as String // as String because of bug in determining state change of 0 numbers
+		send(name: "percentPrecip", value: value, unit: "%")
+		send(name: "forecastIcon", value: icon, displayed: false)
 	}
 	else {
-		log.warn "No response from Weather Underground API"
+		log.warn "Forecast not found"
+	}
+
+	// Alerts
+	def alerts = get("alerts")?.alerts
+	def newKeys = alerts?.collect{it.type + it.date_epoch} ?: []
+	log.debug "WUSTATION: newKeys: $newKeys"
+	log.trace device.currentState("alertKeys")
+	def oldKeys = device.currentState("alertKeys")?.jsonValue
+	log.debug "WUSTATION: oldKeys: $oldKeys"
+
+	def noneString = "no current weather alerts"
+	if (!newKeys && oldKeys == null) {
+		send(name: "alertKeys", value: newKeys.encodeAsJSON(), displayed: false)
+		send(name: "alert", value: noneString, descriptionText: "${device.displayName} has no current weather alerts", isStateChange: true)
+	}
+	else if (newKeys != oldKeys) {
+		if (oldKeys == null) {
+			oldKeys = []
+		}
+		send(name: "alertKeys", value: newKeys.encodeAsJSON(), displayed: false)
+
+		def newAlerts = false
+		alerts.each {alert ->
+			if (!oldKeys.contains(alert.type + alert.date_epoch)) {
+				def msg = "${alert.description} from ${alert.date} until ${alert.expires}"
+				send(name: "alert", value: pad(alert.description), descriptionText: msg, isStateChange: true)
+				newAlerts = true
+			}
+		}
+
+		if (!newAlerts && device.currentValue("alert") != noneString) {
+			send(name: "alert", value: noneString, descriptionText: "${device.displayName} has no current weather alerts", isStateChange: true)
+		}
 	}
 }
 
@@ -286,57 +282,4 @@ private localDate(timeZone) {
 private send(map) {
 	log.debug "WUSTATION: event: $map"
 	sendEvent(map)
-}
-
-private estimateLux(solarradiation, sunriseDate, sunsetDate, weatherIcon) {
-	def lux = 0
-
-	if (solarradiation != '--') {
-		lux = solarradiation.toDouble() / 0.0079
-    	log.debug "Calculate solar radiation: ${solarradiation} / 0.0079 = ${lux}"
-	} else {
-		def now = new Date().time
-		if (now > sunriseDate.time && now < sunsetDate.time) {
-			//day
-			switch(weatherIcon) {
-				case 'tstorms':
-					lux = 200
-					break
-				case ['cloudy', 'fog', 'rain', 'sleet', 'snow', 'flurries',
-					'chanceflurries', 'chancerain', 'chancesleet',
-					'chancesnow', 'chancetstorms']:
-					lux = 1000
-					break
-				case 'mostlycloudy':
-					lux = 2500
-					break
-				case ['partlysunny', 'partlycloudy', 'hazy']:
-					lux = 7500
-					break
-				default:
-					//sunny, clear
-					lux = 10000
-			}
-
-			//adjust for dusk/dawn
-			def afterSunrise = now - sunriseDate.time
-			def beforeSunset = sunsetDate.time - now
-			def oneHour = 1000 * 60 * 60
-
-			if(afterSunrise < oneHour) {
-				//dawn
-				lux = (long)(lux * (afterSunrise/oneHour))
-			} else if (beforeSunset < oneHour) {
-				//dusk
-				lux = (long)(lux * (beforeSunset/oneHour))
-			}
-		}
-		else {
-			//night - always set to 10 for now
-			//could do calculations for dusk/dawn too
-			lux = 10
-		}
-	}
-
-	lux
 }

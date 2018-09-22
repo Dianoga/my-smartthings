@@ -5,7 +5,6 @@
  *  Date: 2013-07-21
  */
 
-// Automatically generated. Make future change here.
 definition(
 	name: "Thermostat Manager",
 	namespace: "dianoga",
@@ -18,13 +17,39 @@ definition(
 )
 
 preferences {
+	page(name: "setpointPage")
+	page(name: "climatePage")
+	page(name: "sensorPage")
+
 	section("Control") {
-		input("thermostat", "capability.thermostat", title: "Thermostat")
+		input "thermostat", "capability.thermostat", title: "Thermostat"
 	}
 
-	section("Open/Close") {
-		input("sensors", "capability.contactSensor", title: "Sensors", multiple: true)
-		input("delay", "number", title: "Delay (seconds)")
+	section("Settings") {
+		href "setpointPage", title: "Temperature Setpoints"
+		href "weatherPage", title: "Weather Settings"
+		href "sensorPage", title: "Window/Door Sensors"
+	}
+}
+
+def setpointPage() {
+	dynamicPage(name: "setpointPage") {
+
+	}
+}
+
+def weatherPage() {
+	dynamicPage(name: "climatePage") {
+
+	}
+}
+
+def sensorPage() {
+	dynamicPage(name: "sensorPage") {
+		section("Open/Close") {
+			input "sensors", "capability.contactSensor", title: "Sensors", multiple: true
+			input "delay", "number", title: "Delay before turning off (seconds)"
+		}
 	}
 }
 
