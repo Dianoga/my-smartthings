@@ -50,6 +50,7 @@ def updated() {
 	log.debug "Updated with settings: ${settings}"
 
 	unsubscribe()
+	unschedule()
 	initialize()
 }
 
@@ -74,14 +75,18 @@ def initialize() {
 		}
 	}
 
-	def child = getChildDevices()[0]
-	runEvery1Minute(child?.poll())
+	runEvery1Minute(poll)
 
 	log.debug("URL: ${commandUrl}")
 }
 
 private String getCommandUrl() {
 	return apiServerUrl("api/smartapps/installations/${app.id}/update?access_token=${state.accessToken}")
+}
+
+def poll() {
+	def child = getChildDevices()[0]
+	child?.poll()
 }
 
 def updateStation() {

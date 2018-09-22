@@ -150,27 +150,27 @@ metadata {
 		}
 
 		valueTile("rain", "device.rainInches", decoration: "flat") {
-			state "default", label:'${currentValue} in'
+			state "default", label:'rain ${currentValue} in'
 		}
 
 		valueTile("rainDaily", "device.rainDailyInches", decoration: "flat") {
-			state "default", label:'${currentValue} in'
+			state "default", label:'daily ${currentValue} in'
 		}
 
 		valueTile("rainWeekly", "device.rainWeeklyInches", decoration: "flat") {
-			state "default", label:'${currentValue} in'
+			state "default", label:'weekly ${currentValue} in'
 		}
 
-		valueTile("rainDaily", "device.rainDailyInches", decoration: "flat") {
-			state "default", label:'${currentValue} in'
+		valueTile("rainMonthly", "device.rainMonthlyInches", decoration: "flat") {
+			state "default", label:'monthly ${currentValue} in'
 		}
 
 		valueTile("rainYearly", "device.rainYearlyInches", decoration: "flat") {
-			state "default", label:'${currentValue} in'
+			state "default", label:'yearly ${currentValue} in'
 		}
 
 		valueTile("pressure", "device.pressureInches", decoration: "flat") {
-			state "default", label:'${currentValue} in'
+			state "default", label:'pressure ${currentValue} in'
 		}
 
 		main(["temperature", "weatherIcon","feelsLike"])
@@ -191,7 +191,7 @@ metadata {
 			"rain",
 			"rainDaily",
 			"rainWeekly",
-			"rainDaily",
+			"rainMonthly",
 			"rainYearly",
 			"pressure"
 		])}
