@@ -149,8 +149,52 @@ metadata {
 			state "default", label:'${currentValue} lux'
 		}
 
+		valueTile("rain", "device.rainInches", decoration: "flat") {
+			state "default", label:'${currentValue} in'
+		}
+
+		valueTile("rainDaily", "device.rainDailyInches", decoration: "flat") {
+			state "default", label:'${currentValue} in'
+		}
+
+		valueTile("rainWeekly", "device.rainWeeklyInches", decoration: "flat") {
+			state "default", label:'${currentValue} in'
+		}
+
+		valueTile("rainDaily", "device.rainDailyInches", decoration: "flat") {
+			state "default", label:'${currentValue} in'
+		}
+
+		valueTile("rainYearly", "device.rainYearlyInches", decoration: "flat") {
+			state "default", label:'${currentValue} in'
+		}
+
+		valueTile("pressure", "device.pressureInches", decoration: "flat") {
+			state "default", label:'${currentValue} in'
+		}
+
 		main(["temperature", "weatherIcon","feelsLike"])
-		details(["temperature", "humidity", "weatherIcon","feelsLike","wind","weather", "city","percentPrecip", "refresh","alert","rise","set","light"])}
+		details([
+			"temperature",
+			"humidity",
+			"weatherIcon",
+			"feelsLike",
+			"wind",
+			"weather",
+			"city",
+			"percentPrecip",
+			"refresh",
+			"alert",
+			"rise",
+			"set",
+			"light",
+			"rain",
+			"rainDaily",
+			"rainWeekly",
+			"rainDaily",
+			"rainYearly",
+			"pressure"
+		])}
 }
 
 // parse events into attributes
@@ -267,7 +311,6 @@ private pad(String s, size = 25) {
 		return s
 	}
 }
-
 
 private get(feature) {
 	getWeatherFeature(feature, zipCode)

@@ -32,6 +32,14 @@ preferences {
 	}
 }
 
+mappings {
+	path("/update") {
+		action: [
+			POST: "updateStation"
+		]
+	}
+}
+
 def installed() {
 	log.debug "Installed with settings: ${settings}"
 
@@ -50,11 +58,63 @@ def uninstalled() {
 }
 
 def initialize() {
+	if (!state.accessToken) {
+		createAccessToken()
+	}
+
 	def deviceId = "local-weather-station"
 
-	try {
-		addChildDevice("dianoga", "Local Weather Station", deviceId, [name: "Device.${deviceId}", label: "Local Weather Station", completedSetup: true])
-	} catch (Exception e) {
-		log.error "Error creating device: ${e}"
+	def children = getChildDevices()
+
+	if (children.size() == 0) {
+		try {
+			addChildDevice("Local Weather Station", deviceId, null, [name: "Device.${deviceId}", label: "Local Weather Station", completedSetup: true])
+		} catch (Exception e) {
+			log.error "Error creating device: ${e}"
+		}
 	}
+
+	def child = getChildDevices()[0]
+	runEvery1Minute(child?.poll())
+
+	log.debug("URL: ${commandUrl}")
+}
+
+private String getCommandUrl() {
+	return apiServerUrl("api/smartapps/installations/${app.id}/update?access_token=${state.accessToken}")
+}
+
+def updateStation() {
+	def data = request.JSON
+	log.debug "Updating local weather station: ${data}"
+
+	def child = getChildDevices()[0]
+
+	child?.sendEvent(name: "temperature", value: fToPref(data.tempf) as Double, unit: getTemperatureScale())
+	child?.sendEvent(name: "humidity", value: data.humidity, unit: "%")
+	child?.sendEvent(name: "illuminance", value: calculateLux(data.solarradiation) as Integer, unit: "lux")
+
+	child?.sendEvent(name: "wind", value: data.windspeedmph as Double, unit: "mph")
+	child?.sendEvent(name: "windGust", value: data.windgustmph as Double, unit: "mph")
+	child?.sendEvent(name: "dewPoint", value: fToPref(data.dewptf) as Double, unit: getTemperatureScale())
+	child?.sendEvent(name: "feelsLike", value: fToPref(data.windchillf) as Double, unit: getTemperatureScale())
+	child?.sendEvent(name: "windDirection", value: data.winddir as Integer)
+	child?.sendEvent(name: "rainInches", value: data.rainin as Double, unit: "in")
+	child?.sendEvent(name: "rainDailyInches", value: data.dailyrainin as Double, unit: "in")
+	child?.sendEvent(name: "rainWeeklyInches", value: data.weeklyrainin as Double, unit: "in")
+	child?.sendEvent(name: "rainMonthlyInches", value: data.monthlyrainin as Double, unit: "in")
+	child?.sendEvent(name: "rainYearlyInches", value: data.yearlyrainin as Double, unit: "in")
+	child?.sendEvent(name: "pressureInches", value: data.baromin as Double, unit: "in")
+}
+
+def fToPref(temp) {
+	if(getTemperatureScale() == 'C') {
+		return temp / 1.8 - 32
+	} else {
+		return temp
+	}
+}
+
+def calculateLux(rad) {
+	(rad as Double) * 126.7
 }
